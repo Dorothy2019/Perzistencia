@@ -7,12 +7,15 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.PopupMenu
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.observe
 import com.google.android.material.snackbar.Snackbar
 import hu.bme.aut.android.todo.R
 import hu.bme.aut.android.todo.adapter.SimpleItemRecyclerViewAdapter
 import hu.bme.aut.android.todo.feature.details.TodoDetailActivity
 import hu.bme.aut.android.todo.feature.details.TodoDetailFragment
 import hu.bme.aut.android.todo.model.Todo
+import hu.bme.aut.android.todo.viewmodel.TodoViewModel
 import kotlinx.android.synthetic.main.activity_todo_list.*
 import kotlinx.android.synthetic.main.todo_list.*
 
@@ -30,6 +33,8 @@ class TodoListActivity :
     SimpleItemRecyclerViewAdapter.TodoItemClickListener {
 
     private lateinit var simpleItemRecyclerViewAdapter: SimpleItemRecyclerViewAdapter
+
+    private lateinit var todoViewModel: TodoViewModel
 
     /**
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
@@ -58,6 +63,11 @@ class TodoListActivity :
         }
 
         setupRecyclerView()
+
+        todoViewModel = ViewModelProvider(this).get(TodoViewModel::class.java)
+        todoViewModel.allTodos.observe(this) { todos ->
+            simpleItemRecyclerViewAdapter.addAll(todos)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -70,33 +80,16 @@ class TodoListActivity :
             val todoCreateFragment = TodoCreateFragment()
             todoCreateFragment.show(supportFragmentManager, "TAG")
         }
+        if (item.itemId == R.id.itemDeleteAllTodo){
+            todoViewModel.deleteAll()
+        }
         return super.onOptionsItemSelected(item)
     }
 
     private fun setupRecyclerView() {
-        val demoData = mutableListOf(
-            Todo(
-                title = "title1",
-                priority = Todo.Priority.LOW,
-                dueDate = "2011. 09. 26.",
-                description = "description1"
-            ),
-            Todo(
-                title = "title2",
-                priority = Todo.Priority.MEDIUM,
-                dueDate = "2011. 09. 27.",
-                description = "description2"
-            ),
-            Todo(
-                title = "title3",
-                priority = Todo.Priority.HIGH,
-                dueDate = "2011. 09. 28.",
-                description = "description3"
-            )
-        )
+
         simpleItemRecyclerViewAdapter = SimpleItemRecyclerViewAdapter()
         simpleItemRecyclerViewAdapter.itemClickListener = this
-        simpleItemRecyclerViewAdapter.addAll(demoData)
         rvTodoList.adapter = simpleItemRecyclerViewAdapter
     }
 
@@ -115,12 +108,16 @@ class TodoListActivity :
         }
     }
 
-    override fun onItemLongClick(position: Int, view: View): Boolean {
+    override fun onItemLongClick(position: Int, view: View, todo: Todo): Boolean {
         val popup = PopupMenu(this, view)
         popup.inflate(R.menu.menu_todo)
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                R.id.delete -> simpleItemRecyclerViewAdapter.deleteRow(position)
+                R.id.delete ->{
+                    todoViewModel.delete(todo)
+                    return@setOnMenuItemClickListener  true
+                }
+
             }
             false
         }
@@ -129,7 +126,7 @@ class TodoListActivity :
     }
 
     override fun onTodoCreated(todo: Todo) {
-        simpleItemRecyclerViewAdapter.addItem(todo)
+        todoViewModel.insert(todo)
     }
 
 }

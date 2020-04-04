@@ -8,7 +8,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/AppTheme"
+        android:name=".TodoApplication">
         <activity
             android:name=".feature.list.TodoListActivity"
             android:label="@string/title_todo_list"
